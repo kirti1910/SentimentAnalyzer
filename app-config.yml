@@ -1,0 +1,15 @@
+web:
+    client_id: "835979368011-vm1rtj5jkhb78k63qo43gtt6mb04jpnc.apps.googleusercontent.com"
+    project_id: "sentimentanalyzer-166716"
+    auth_uri: "https://accounts.google.com/o/oauth2/auth"
+    token_uri: "https://accounts.google.com/o/oauth2/token"
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
+    client_secret: "8wrBv9o2GAs3c6f1I-BVvvT3"
+    redirect_uris: ["http://localhost:8080/home"]
+
+authorization:
+    baseUrl: "https://accounts.google.com/o/oauth2/v2/auth"
+    redirect_uri: "http://localhost:8080/home"
+    scope: "https://www.googleapis.com/auth/gmail.readonly"
+
+
