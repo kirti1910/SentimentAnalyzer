@@ -7,13 +7,5 @@
 
 <body>
 
-<g:if test="${code}">
-    <%
-        out << "User code is ${code}"
-    %>
-</g:if>
-
-
-
 </body>
 </html>

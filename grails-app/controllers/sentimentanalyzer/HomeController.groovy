@@ -2,6 +2,7 @@ package sentimentanalyzer
 
 import grails.converters.JSON
 import groovy.time.TimeCategory
+import sentimentanalyzer.utils.CommonUtils
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -41,9 +42,8 @@ class HomeController {
                     'authorization': "Bearer $access_token".toString()
             ]
 
-            def response2 = GrailsUtils.doGet("https://www.googleapis.com/gmail/v1/users/me/messages", headers2)
-                                                  //TODO Make less messages
-            response2.messages[0..1].id.findAll { messageId ->
+            def response2 = GrailsUtils.doGet("https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=10", headers2)
+            response2.messages.id.findAll { messageId ->
                 !messages.containsKey(messageId)
             }.each { messageId ->
                 def email_content = GrailsUtils.doGet(
@@ -53,8 +53,13 @@ class HomeController {
                 messages.put(messageId, email_content)
             }
 
-
         }
+
+        redirect(action: 'report')
+
+    }
+
+    def report(){
 
         messages.findAll { k, v ->
             ! messageSentiments.containsKey(k)
@@ -71,5 +76,28 @@ class HomeController {
 
             messageSentiments.put(messageId, JSON.parse(sout.toString()))
         }
+
+        Map msgList = messages
+                .groupBy { k, v ->
+            v.payload.headers.findAll { it.name == 'From'}.value
+
+        }.collectEntries { k, v ->
+
+            String key = k[0]
+            def value = v.keySet().collect {
+                messageSentiments.get(it)
+            }
+            List subjectivities = value*.subjectivity
+            List polarities = value*.polarity
+            Double subjectivity = CommonUtils.average(subjectivities)
+            Double polarity = CommonUtils.average(polarities)
+            [(key): [
+                    'subjectivity': subjectivity,
+                    'polarity': polarity,
+                    'emails': subjectivities.size(),
+                    'score': CommonUtils.getScore(polarity)
+            ]]
+        }
+        render(view: 'report', model: [messages: msgList , overallScore: CommonUtils.getOverallScore(msgList)])
     }
 }
