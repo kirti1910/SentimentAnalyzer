@@ -1,5 +1,6 @@
 package sentimentanalyzer
 
+import grails.converters.JSON
 import groovy.time.TimeCategory
 
 import java.util.concurrent.ConcurrentHashMap
@@ -8,7 +9,8 @@ class HomeController {
 
     Map accessResponse
 
-    static Map<String, String> messages = new ConcurrentHashMap<>()
+    static Map<String, Object> messages = new ConcurrentHashMap<>()
+    static Map<String, Map> messageSentiments = new ConcurrentHashMap<>()
 
     def index() {
         def access_token = params.access_token
@@ -39,19 +41,35 @@ class HomeController {
                     'authorization': "Bearer $access_token".toString()
             ]
 
-            def response2 = GrailsUtils.doPost("https://www.googleapis.com/gmail/v1/users/me/messages", [:], headers2)
+            def response2 = GrailsUtils.doGet("https://www.googleapis.com/gmail/v1/users/me/messages", headers2)
                                                   //TODO Make less messages
-            response2.messages.id.each { messageId ->
-                if (!messages.containsKey(messageId)) {
-                    String snippet = GrailsUtils.doGet(
-                            "https://www.googleapis.com/gmail/v1/users/me/messages/$messageId?format=full",
-                            headers2
-                    ).snippet
-                    messages.put(messageId, snippet)
-                }
-
+            response2.messages[0..1].id.findAll { messageId ->
+                !messages.containsKey(messageId)
+            }.each { messageId ->
+                def email_content = GrailsUtils.doGet(
+                        "https://www.googleapis.com/gmail/v1/users/me/messages/$messageId?format=full",
+                        headers2
+                )
+                messages.put(messageId, email_content)
             }
 
+
+        }
+
+        messages.findAll { k, v ->
+            ! messageSentiments.containsKey(k)
+        }.each { k,v ->
+            String messageId = k
+            String snippet = v.snippet
+            def command = "/home/ttnd/anaconda3/bin/python /home/ttnd/nbs/sentiment.py ${snippet}"
+
+            def sout = new StringBuilder()
+
+            def process = command.execute()
+            process.consumeProcessOutput(sout, System.err)
+            process.waitForOrKill(1000)
+
+            messageSentiments.put(messageId, JSON.parse(sout.toString()))
         }
     }
 }

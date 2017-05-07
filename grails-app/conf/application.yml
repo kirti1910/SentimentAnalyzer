@@ -117,6 +117,8 @@ authenticate:
 
 watch_url: "https://www.googleapis.com/gmail/v1/users/me/watch"
 watch_topic: "projects/sentimentanalyzer-166716/topics/test-ml"
+python_path: "/home/ttnd/anaconda3/bin/python"
+script_path: "/home/ttnd/nbs/sentiment.py"
 
 dataSource:
         pooled: true
